@@ -1,8 +1,6 @@
 #include <RH_RF95.h>
 #include <Wire.h>
 
-uint8_t recvBuffer[4];
-
 #define RF95_FREQ 915.0
 
 #define RFM95_CS      10
@@ -53,29 +51,27 @@ void setup() {
 }
 
 void loop() {
-  
+
   static int16_t packetnum = 0;  // packet counter, we increment per xmission
-  const int nGet = 3;
+
+  const int RECV_BUFFER_LEN = 3;
   int bytesReceived = 0;
+  uint8_t recvBuffer[RECV_BUFFER_LEN];
   
-   Wire.requestFrom(0x40, nGet);
-   while(Wire.available() && bytesReceived < nGet)    // slave may send less than requested
+  
+   Wire.requestFrom(0x40, RECV_BUFFER_LEN);
+   while(Wire.available() && bytesReceived < RECV_BUFFER_LEN)    // slave may send less than requested
    {
-      char c = Wire.read();    // receive a byte as character
+      uint8_t c = Wire.read();    // receive a byte as character
+      recvBuffer[bytesReceived] = c;
       bytesReceived++;
-      Serial.print(String((unsigned int)c) + " ");         // print the character
+      Serial.print(String(c) + " ");         // print the character
    }
    Serial.println("");
 
 
-  // Transmit a packet
-  char radiopacket[20] = "Hello World #      ";
-  itoa(packetnum++, radiopacket+13, 10);
-  Serial.print("Sending "); Serial.println(radiopacket);
-  radiopacket[19] = 0;
-  
   // Send a message!
-  rf95.send((uint8_t *)radiopacket, strlen(radiopacket));
+  rf95.send((uint8_t *)recvBuffer, RECV_BUFFER_LEN);
   rf95.waitPacketSent();
 
   // wait for a second before transmitting again
